@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { auth, googleAuthProvider } from "../../firebase";
-import {  Button, message } from "antd";
+import { Button, message } from "antd";
 import { MailOutlined, GoogleOutlined } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { LOGGED_IN_USER } from "../../redux/actions/types";
+import axios from "axios";
+const sendTokenToBackend = async (authtoken) => {
+  return await axios.post(
+    `${process.env.REACT_APP_BACKEND_API}/users/create-or-update-user`,
+    {},
+    {
+      headers: {
+        authtoken,
+      },
+    }
+  );
+};
 const LoginUserScreen = ({ history }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,13 +38,16 @@ const LoginUserScreen = ({ history }) => {
       const res = await auth.signInWithEmailAndPassword(email, password);
       const { user } = res;
       const idToken = await user.getIdTokenResult();
-      dispatch({
-        type: LOGGED_IN_USER,
-        payload: {
-          email: user.email,
-          token: idToken.token,
-        },
-      });
+      sendTokenToBackend(idToken.token)
+        .then((res) => console.log(res))
+        .catch((err) => console.log(err));
+      // dispatch({
+      //   type: LOGGED_IN_USER,
+      //   payload: {
+      //     email: user.email,
+      //     token: idToken.token,
+      //   },
+      // });
       setLoading(false);
       history.push("/");
     } catch (error) {
